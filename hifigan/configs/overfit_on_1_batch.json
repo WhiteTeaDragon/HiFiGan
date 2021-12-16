@@ -54,7 +54,7 @@
     }
   },
   "lr_schedulerG": {
-    "use": "True",
+    "use": "False",
     "type": "ExponentialLR",
     "frequency": "epoch",
     "args": {
