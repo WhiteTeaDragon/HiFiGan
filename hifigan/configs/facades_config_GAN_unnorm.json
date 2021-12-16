@@ -53,7 +53,8 @@
         {
           "type": "ImageToImageDataset",
           "args": {
-            "name": "facades"
+            "name": "facades",
+            "data_dir": "/home/jupyter/mnt/s3/bucket-hse-rw/data/datasets"
           }
         }
       ]

@@ -17,7 +17,7 @@ def get_dataloaders(configs: ConfigParser, device):
         params = config_params[i][1]
         num_workers = params.get("num_workers", 1)
         dataset = configs.init_obj(params["datasets"][0], hifigan.datasets,
-                                   device, num_workers, configs)
+                                   configs)
         if "test_size" in params:
             test_size = int(params["test_size"])
             train_size = len(dataset) - test_size
