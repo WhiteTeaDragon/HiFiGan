@@ -40,24 +40,28 @@ class SubDiscriminator(nn.Module):
 class PeriodSubDiscriminator(SubDiscriminator):
     def __init__(self, period):
         self.period = period
-        layers = []
-        input_ch = 1
-        output_ch = 32
-        for i in range(4):
-            output_ch *= 2
-            layers.append(nn.Sequential(
-                weight_norm(nn.Conv2d(input_ch, output_ch, kernel_size=(5, 1),
-                                      stride=(3, 1), padding=(2, 0))),
-                nn.LeakyReLU(0.1)
-            ))
-            input_ch = output_ch
-        layers.append(nn.Sequential(
-            weight_norm(nn.Conv2d(output_ch, 1024, kernel_size=(5, 1),
+        layers = [nn.Sequential(
+            weight_norm(nn.Conv2d(1, 32, kernel_size=(5, 1), stride=(3, 1),
                                   padding=(2, 0))),
             nn.LeakyReLU(0.1)
-        ))
-        layers.append(weight_norm(nn.Conv2d(1024, 1, kernel_size=(3, 1),
-                                                padding=(1, 0))))
+        ), nn.Sequential(
+            weight_norm(nn.Conv2d(32, 128, kernel_size=(5, 1), stride=(3, 1),
+                                  padding=(2, 0))),
+            nn.LeakyReLU(0.1)
+        ), nn.Sequential(
+            weight_norm(nn.Conv2d(128, 512, kernel_size=(5, 1), stride=(3, 1),
+                                  padding=(2, 0))),
+            nn.LeakyReLU(0.1)
+        ), nn.Sequential(
+            weight_norm(nn.Conv2d(512, 1024, kernel_size=(5, 1), stride=(3, 1),
+                                  padding=(2, 0))),
+            nn.LeakyReLU(0.1)
+        ), nn.Sequential(
+            weight_norm(nn.Conv2d(1024, 1024, kernel_size=(5, 1),
+                                  padding=(2, 0))),
+            nn.LeakyReLU(0.1)
+        ), weight_norm(nn.Conv2d(1024, 1, kernel_size=(3, 1),
+                                 padding=(1, 0)))]
         super(PeriodSubDiscriminator, self).__init__(layers)
 
     def forward(self, input_tensor):
