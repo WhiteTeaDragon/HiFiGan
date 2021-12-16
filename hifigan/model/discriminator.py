@@ -65,11 +65,10 @@ class PeriodSubDiscriminator(SubDiscriminator):
         super(PeriodSubDiscriminator, self).__init__(layers)
 
     def forward(self, input_tensor):
-        batch_size, ch, t = input_tensor.shape
-        assert ch == 1
+        batch_size, t = input_tensor.shape
         padding = (self.period - (t % self.period)) % self.period
         x = nn.functional.pad(input_tensor, (0, padding), "reflect")
-        x = x.reshape(-1, 1, (t + self.period - 1) // self.period, self.period)
+        x = x.reshape(-1, (t + self.period - 1) // self.period, self.period)
         return super(PeriodSubDiscriminator, self).forward(x)
         
 
