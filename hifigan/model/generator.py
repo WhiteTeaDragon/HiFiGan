@@ -3,10 +3,6 @@ from torch import nn
 from hifigan.base import BaseModel
 
 
-def get_padding(kernel_size, dilation=1):
-    return (kernel_size - 1) * dilation // 2
-
-
 class ResBlock(nn.Module):
     def __init__(self, d_r, k_r, channels):
         super(ResBlock, self).__init__()
@@ -58,7 +54,7 @@ class Block(nn.Module):
         self.activation = nn.LeakyReLU(0.1)
         self.conv = nn.ConvTranspose1d(in_channels, out_channels, (kernel, 1),
                                        stride=stride,
-                                       padding=get_padding(kernel, 1))
+                                       padding=(kernel - stride) // 2)
         self.mrf = MRF(k_r, d_r, out_channels)
 
     def forward(self, input_tensor):
