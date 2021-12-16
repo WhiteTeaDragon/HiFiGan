@@ -24,13 +24,16 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
     def __getitem__(self, index: int):
         waveform, _, _, _ = super().__getitem__(index)
         waveform_length = torch.tensor([waveform.shape[-1]]).int()
-        if waveform_length > self.segment_size:
-            max_audio_start = waveform_length - self.segment_size
-            audio_start = random.randint(0, max_audio_start)
-            waveform = waveform[:, audio_start:audio_start + self.segment_size]
-        else:
-            waveform = torch.nn.functional.pad(
-                waveform, (0, self.segment_size - waveform_length), 'constant')
+        if self.segment_size is not None:
+            if waveform_length > self.segment_size:
+                max_audio_start = waveform_length - self.segment_size
+                audio_start = random.randint(0, max_audio_start)
+                waveform = waveform[:, audio_start:audio_start +
+                                                   self.segment_size]
+            else:
+                waveform = torch.nn.functional.pad(
+                    waveform, (0, self.segment_size - waveform_length),
+                    'constant')
 
         melspec, _ = self.get_spectrogram(waveform)
         melspec_length = torch.tensor([melspec.shape[-1]]).int()

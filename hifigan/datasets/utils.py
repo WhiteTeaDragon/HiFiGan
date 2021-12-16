@@ -2,6 +2,7 @@ import librosa
 import torch
 import torchaudio
 from torch.utils.data import DataLoader
+from copy import copy
 
 import hifigan
 from hifigan.collate_fn.collate import collate_fn
@@ -25,9 +26,12 @@ def get_dataloaders(configs: ConfigParser):
             train_size = len(dataset) - test_size
             train_dataset, test_dataset = torch.utils.data.random_split(
                 dataset, [train_size, test_size])
+            test_dataset.dataset = copy(dataset)
+            test_dataset.dataset.segment_size = None
             split = "train"
         else:
             train_dataset = dataset
+            train_dataset.segment_size = None
             split = "test"
         # select batch size or batch sampler
         assert "batch_size" in params,\
