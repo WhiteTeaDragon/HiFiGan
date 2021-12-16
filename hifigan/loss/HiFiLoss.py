@@ -22,3 +22,12 @@ class HiFiLoss(torch.nn.Module):
     def disc_forward(self, target_res, model_res):
         return self.real_loss(target_res) + self.fake_loss(model_res)
 
+    def features_loss(self, target_features, model_features):
+        shape = target_features.shape
+        target_features = target_features.reshape(shape[0], shape[1],
+                                                  *shape[2:])
+        shape = model_features.shape
+        model_features = model_features.reshape(shape[0], shape[1],
+                                                *shape[2:])
+        return torch.sum(torch.mean(
+            torch.abs(target_features - model_features), dim=0))

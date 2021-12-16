@@ -66,7 +66,7 @@ class Trainer(BaseTrainer):
         if discriminator is not None:
             self.train_metrics = MetricTracker(
                 "generator loss", "generator reconstruction loss",
-                "generator adversarial loss", "fake_D_loss", "real_D_loss",
+                "generator adversarial loss", "discriminator loss",
                 "generator grad norm", "discriminator grad norm",
                 *[m.name for m in self.metrics]
             )
@@ -227,6 +227,8 @@ class Trainer(BaseTrainer):
             self._clip_grad_norm()
             self.optimizerD.step()
 
+            batch["discriminator loss"] = (mpd_loss + msd_loss).item()
+
         ### Update generator
         self.generator.zero_grad(set_to_none=True)
         batch["output"] = output_wav
@@ -234,8 +236,21 @@ class Trainer(BaseTrainer):
         gen_reconstruction_loss = self.criterion(**batch)
         if self.discriminator is not None:
             result = self.discriminator(batch["audio"], output_wav)
-
-            final_loss = gen_disc_loss + self.criterion.lam * \
+            _, model_res, target_features, model_features = result["mpd"]
+            target_features = torch.tensor(target_features, device=self.device)
+            model_features = torch.tensor(model_features, device=self.device)
+            mpd_gen_loss = self.criterion.real_loss(model_res)
+            mpd_feature_loss = self.criterion.feature_loss(target_features,
+                                                           model_features)
+            _, model_res, target_features, model_features = result["msd"]
+            target_features = torch.tensor(target_features, device=self.device)
+            model_features = torch.tensor(model_features, device=self.device)
+            msd_gen_loss = self.criterion.real_loss(model_res)
+            msd_feature_loss = self.criterion.feature_loss(target_features,
+                                                           model_features)
+            gen_disc_loss = mpd_gen_loss + msd_gen_loss
+            fm = self.criterion.lam_fm * (mpd_feature_loss + msd_feature_loss)
+            final_loss = gen_disc_loss + fm + self.criterion.lam_mel * \
                 gen_reconstruction_loss
         else:
             final_loss = gen_reconstruction_loss
@@ -252,8 +267,8 @@ class Trainer(BaseTrainer):
                                gen_reconstruction_loss.item())
                 metrics.update("generator adversarial loss",
                                gen_disc_loss.item())
-                metrics.update("fake_D_loss", fake_loss.item())
-                metrics.update("real_D_loss", real_loss.item())
+                metrics.update("discriminator loss",
+                               batch["discriminator loss"])
             for met in self.metrics:
                 metrics.update(met.name, met(**batch))
         return batch
