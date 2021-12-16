@@ -21,7 +21,7 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
         waveform, _, _, _ = super().__getitem__(index)
         waveform_length = torch.tensor([waveform.shape[-1]]).int()
 
-        melspec, _ = self.get_spectogram(waveform)
+        melspec, _ = self.get_spectrogram(waveform)
         melspec_length = torch.tensor([melspec.shape[-1]]).int()
 
         return waveform, waveform_length, melspec, melspec_length
