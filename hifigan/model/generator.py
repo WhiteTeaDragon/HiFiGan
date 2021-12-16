@@ -63,7 +63,7 @@ class Block(nn.Module):
 class Generator(BaseModel):
     def __init__(self, hidden_ch, k_u, k_r, d_r, d_r_repeat):
         super(Generator, self).__init__()
-        d_r = d_r * d_r_repeat
+        d_r = [d_r] * d_r_repeat
         self.conv1 = nn.Conv1d(80, hidden_ch, (7, 1))
         self.layers = []
         in_channels = hidden_ch
