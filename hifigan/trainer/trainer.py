@@ -1,0 +1,332 @@
+import random
+import torch
+import torchvision
+from torch.nn.utils import clip_grad_norm_
+
+from hifigan.base import BaseTrainer
+from hifigan.utils import inf_loop, MetricTracker, ROOT_PATH
+
+from tqdm import tqdm
+
+
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
+
+
+class Trainer(BaseTrainer):
+    """
+    Trainer class
+    """
+
+    def __init__(
+            self,
+            generator,
+            discriminator,
+            criterion,
+            metrics,
+            optimizerG,
+            optimizerD,
+            config,
+            device,
+            data_loader,
+            log_step,
+            fid_log_step,
+            valid_data_loader=None,
+            lr_schedulerG=None,
+            lr_schedulerD=None,
+            len_epoch=None,
+            skip_oom=True,
+            schedulerG_frequency_of_update=None,
+            schedulerD_frequency_of_update=None
+    ):
+        super().__init__(generator, discriminator, criterion, metrics,
+                         optimizerG, optimizerD, config, device)
+        self.skip_oom = skip_oom
+        self.config = config
+        self.data_loader = data_loader
+        self.log_step = log_step
+        self.fid_log_step = fid_log_step
+        if len_epoch is None:
+            # epoch-based training
+            self.len_epoch = len(self.data_loader)
+        else:
+            # iteration-based training
+            self.data_loader = inf_loop(data_loader)
+            self.len_epoch = len_epoch
+        self.valid_data_loader = valid_data_loader
+        self.do_validation = self.valid_data_loader is not None
+        self.lr_schedulerG = lr_schedulerG
+        self.schedulerG_frequency_of_update = schedulerG_frequency_of_update
+        self.lr_schedulerD = lr_schedulerD
+        self.schedulerD_frequency_of_update = schedulerD_frequency_of_update
+
+        if discriminator is not None:
+            self.train_metrics = MetricTracker(
+                "generator loss", "generator reconstruction loss",
+                "generator adversarial loss", "fake_D_loss", "real_D_loss",
+                "generator grad norm", "discriminator grad norm",
+                *[m.name for m in self.metrics]
+            )
+        else:
+            self.train_metrics = MetricTracker(
+                "generator loss",
+                "generator grad norm",
+                *[m.name for m in self.metrics]
+            )
+        self.valid_metrics = MetricTracker(
+            *[m.name for m in self.metrics]
+        )
+
+    @staticmethod
+    def move_batch_to_device(batch, device: torch.device):
+        """
+        Move all necessary tensors to the HPU
+        """
+        for tensor_for_gpu in ["input_image", "target"]:
+            batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
+        return batch
+
+    def _clip_grad_norm(self):
+        if self.config["trainer"].get("grad_norm_clip_G", None) is not None:
+            clip_grad_norm_(
+                self.generator.parameters(),
+                self.config["trainer"]["grad_norm_clip_G"]
+            )
+        if self.config["trainer"].get("grad_norm_clip_D", None) is not None:
+            clip_grad_norm_(
+                self.discriminator.parameters(),
+                self.config["trainer"]["grad_norm_clip_D"]
+            )
+
+    def _train_epoch(self, epoch):
+        """
+        Training logic for an epoch
+
+        :param epoch: Integer, current training epoch.
+        :return: A log that contains average loss and metric in this epoch.
+        """
+        self.train_metrics.reset()
+        self.writer.add_scalar("epoch", epoch)
+        under_enumerate = tqdm(self.data_loader, desc="train",
+                               total=self.len_epoch)
+        for batch_idx, batch in enumerate(under_enumerate):
+            try:
+                batch = self.train_on_batch(
+                    batch,
+                    metrics=self.train_metrics
+                )
+            except RuntimeError as e:
+                if "out of memory" in str(e) and self.skip_oom:
+                    self.logger.warning("OOM on batch. Skipping batch.")
+                    for p in self.generator.parameters():
+                        if p.grad is not None:
+                            del p.grad  # free some memory
+                    for p in self.discriminator.parameters():
+                        if p.grad is not None:
+                            del p.grad  # free some memory
+                    torch.cuda.empty_cache()
+                    continue
+                else:
+                    raise e
+            self.train_metrics.update("generator grad norm",
+                                      self.get_model_grad_norm(self.generator))
+            if self.discriminator is not None:
+                self.train_metrics.update("discriminator grad norm",
+                                          self.get_model_grad_norm(
+                                              self.discriminator))
+            if batch_idx % self.log_step == 0:
+                self.logger.debug(
+                    "Train Epoch: {} {} Generator loss: {:.6f}".format(
+                        epoch, self._progress(batch_idx),
+                        batch["generator loss"]
+                    )
+                )
+                self.writer.set_step((epoch - 1) * self.len_epoch +
+                                     batch_idx)
+                self.writer.add_scalar(
+                    "generator learning rate", get_lr(self.optimizerG)
+                )
+                if self.discriminator is not None:
+                    self.writer.add_scalar(
+                        "discriminator learning rate", get_lr(
+                            self.optimizerD)
+                    )
+                self._log_scalars(self.train_metrics)
+                self._log_images(**batch)
+            if batch_idx >= self.len_epoch:
+                break
+
+        log = self.train_metrics.result()
+        if self.do_validation:
+            val_log = self._valid_epoch(epoch)
+            log.update(**{"val_" + k: v for k, v in val_log.items()})
+
+        if self.lr_schedulerG is not None and \
+                self.schedulerG_frequency_of_update == "epoch":
+            if isinstance(self.lr_schedulerG,
+                          torch.optim.lr_scheduler.ReduceLROnPlateau):
+                if not self.do_validation:
+                    raise ValueError("Cannot use ReduceLROnPlateau if "
+                                     "validation is off")
+                self.lr_schedulerG.step(val_log["loss"])
+            else:
+                self.lr_schedulerG.step()
+        if self.lr_schedulerD is not None and \
+                self.schedulerD_frequency_of_update == "epoch":
+            if isinstance(self.lr_schedulerD,
+                          torch.optim.lr_scheduler.ReduceLROnPlateau):
+                if not self.do_validation:
+                    raise ValueError("Cannot use ReduceLROnPlateau if "
+                                     "validation is off")
+                self.lr_schedulerD.step(val_log["loss"])
+            else:
+                self.lr_schedulerD.step()
+
+        return log
+
+    def train_on_batch(self, batch, metrics: MetricTracker):
+        batch = self.move_batch_to_device(batch, self.device)
+        batch["device"] = self.device
+        if self.discriminator is not None:
+            self.discriminator.train()
+        self.generator.train()
+
+        output_wav = self.generator(**batch)["output"]
+        output_melspec = self.data_loader.dataset.get_spectrogram(output_wav)
+
+        if self.discriminator is not None:
+            ### Update discriminator
+            self.discriminator.zero_grad(set_to_none=True)
+
+            ## Real
+            result = self.discriminator(batch["input_image"], batch["target"])
+            labels = torch.full(result.shape, 1, dtype=torch.float,
+                                device=self.device)
+            # 2 is hardcoded parameter from the article
+            real_loss = self.criterion.disc_forward(result, labels) / 2
+            real_loss.backward()
+
+            ## Fake
+            labels.fill_(0)
+            result = self.discriminator(batch["input_image"],
+                                        output_wav.detach())
+            # 2 is hardcoded parameter from the article
+            fake_loss = self.criterion.disc_forward(result, labels) / 2
+            fake_loss.backward()
+
+            self._clip_grad_norm()
+            self.optimizerD.step()
+
+        ### Update generator
+        self.generator.zero_grad(set_to_none=True)
+        batch["output"] = output_wav
+        batch["output_melspec"] = output_melspec
+        gen_reconstruction_loss = self.criterion(**batch)
+        if self.discriminator is not None:
+            labels.fill_(1)
+            result = self.discriminator(batch["input_image"], output_wav)
+            gen_disc_loss = self.criterion.disc_forward(result, labels)
+            final_loss = gen_disc_loss + self.criterion.lam * \
+                gen_reconstruction_loss
+        else:
+            final_loss = gen_reconstruction_loss
+        final_loss.backward()
+        self._clip_grad_norm()
+        self.optimizerG.step()
+
+        batch["generator loss"] = final_loss.item()
+
+        if metrics is not None:
+            metrics.update("generator loss", batch["generator loss"])
+            if self.discriminator is not None:
+                metrics.update("generator reconstruction loss",
+                               gen_reconstruction_loss.item())
+                metrics.update("generator adversarial loss",
+                               gen_disc_loss.item())
+                metrics.update("fake_D_loss", fake_loss.item())
+                metrics.update("real_D_loss", real_loss.item())
+            for met in self.metrics:
+                metrics.update(met.name, met(**batch))
+        return batch
+
+    def valid_on_batch(self, batch, metrics):
+        batch = self.move_batch_to_device(batch, self.device)
+        batch["device"] = self.device
+        self.generator.train()
+        if self.discriminator is not None:
+            self.discriminator.eval()
+        with torch.no_grad():
+            outputs = self.generator(**batch)
+            batch.update(outputs)
+            if metrics is not None:
+                for met in self.metrics:
+                    metrics.update(met.name, met(**batch))
+        return batch
+
+    def _valid_epoch(self, epoch):
+        """
+        Validate after training an epoch
+
+        :param epoch: Integer, current training epoch.
+        :return: A log that contains information about validation
+        """
+        self.valid_metrics.reset()
+        with torch.no_grad():
+            for_range = tqdm(
+                enumerate(self.valid_data_loader),
+                desc="validation",
+                total=len(self.valid_data_loader),
+            )
+            for batch_idx, batch in for_range:
+                batch = self.valid_on_batch(
+                    batch,
+                    metrics=self.valid_metrics,
+                )
+            self.writer.set_step(epoch * self.len_epoch, "valid")
+            self._log_scalars(self.valid_metrics)
+            self._log_images(**batch)
+        return self.valid_metrics.result()
+
+    def _progress(self, batch_idx):
+        base = "[{}/{} ({:.0f}%)]"
+        if hasattr(self.data_loader, "n_samples"):
+            current = batch_idx * self.data_loader.batch_size
+            total = self.data_loader.n_samples
+        else:
+            current = batch_idx
+            total = self.len_epoch
+        return base.format(current, total, 100.0 * current / total)
+
+    @torch.no_grad()
+    def get_model_grad_norm(self, model, norm_type=2):
+        parameters = model.parameters()
+        if isinstance(parameters, torch.Tensor):
+            parameters = [parameters]
+        parameters = [p for p in parameters if p.grad is not None]
+        total_norm = torch.norm(
+            torch.stack(
+                [torch.norm(p.grad.detach(), norm_type).cpu() for p in
+                 parameters]
+            ),
+            norm_type,
+        )
+        return total_norm.item()
+
+    def _log_scalars(self, metric_tracker: MetricTracker):
+        if self.writer is None:
+            return
+        for metric_name in metric_tracker.keys():
+            if metric_name != "fid":
+                self.writer.add_scalar(f"{metric_name}",
+                                       metric_tracker.avg(metric_name))
+
+    def _log_images(self, input_image, output, untouched_target, *args,
+                    **kwargs):
+        if self.writer is None:
+            return
+        index = random.randint(0, len(input_image) - 1)
+        self.writer.add_image("input_image", input_image[index],
+                              normalize=True)
+        self.writer.add_image("output_image", output[index])
+        self.writer.add_image("target_image", untouched_target[index])
