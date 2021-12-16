@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
-    def __init__(self, config_parser, device, data_dir=None, download="True"):
+    def __init__(self, config_parser, data_dir=None, download="True"):
         if data_dir is None:
             data_dir = ROOT_PATH / "data" / "datasets" / "lj"
             data_dir.mkdir(exist_ok=True, parents=True)
