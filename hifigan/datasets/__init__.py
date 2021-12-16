@@ -1,5 +1,5 @@
-from pix2pix.datasets.image_to_image_dataset import ImageToImageDataset
+from hifigan.datasets.lj_dataset import LJSpeechDataset
 
 __all__ = [
-    "ImageToImageDataset"
+    "LJSpeechDataset"
 ]
