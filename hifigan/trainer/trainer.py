@@ -215,21 +215,14 @@ class Trainer(BaseTrainer):
             ### Update discriminator
             self.discriminator.zero_grad(set_to_none=True)
 
-            ## Real
-            result = self.discriminator(batch["input_image"], batch["target"])
-            labels = torch.full(result.shape, 1, dtype=torch.float,
-                                device=self.device)
-            # 2 is hardcoded parameter from the article
-            real_loss = self.criterion.disc_forward(result, labels) / 2
-            real_loss.backward()
+            result = self.discriminator(batch["audio"], output_wav.detach())
+            target_res, model_res, _, _ = result["mpd"]
+            mpd_loss = self.criterion.disc_forward(target_res, model_res)
+            mpd_loss.backward()
 
-            ## Fake
-            labels.fill_(0)
-            result = self.discriminator(batch["input_image"],
-                                        output_wav.detach())
-            # 2 is hardcoded parameter from the article
-            fake_loss = self.criterion.disc_forward(result, labels) / 2
-            fake_loss.backward()
+            target_res, model_res, _, _ = result["msd"]
+            msd_loss = self.criterion.disc_forward(target_res, model_res)
+            msd_loss.backward()
 
             self._clip_grad_norm()
             self.optimizerD.step()
@@ -240,9 +233,8 @@ class Trainer(BaseTrainer):
         batch["output_melspec"] = output_melspec
         gen_reconstruction_loss = self.criterion(**batch)
         if self.discriminator is not None:
-            labels.fill_(1)
-            result = self.discriminator(batch["input_image"], output_wav)
-            gen_disc_loss = self.criterion.disc_forward(result, labels)
+            result = self.discriminator(batch["audio"], output_wav)
+
             final_loss = gen_disc_loss + self.criterion.lam * \
                 gen_reconstruction_loss
         else:

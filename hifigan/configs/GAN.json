@@ -1,7 +1,7 @@
 {
   "name": "hifi_1_batch_config",
   "n_gpu": 1,
-  "overfit_on_one_batch": "True",
+  "overfit_on_one_batch": "False",
   "preprocessing": {
     "sr": 22050,
     "spectrogram": {
@@ -28,6 +28,12 @@
       "d_r_repeat": 3
     }
   },
+  "archD": {
+    "type": "Discriminator",
+    "args": {
+      "periods": [2, 3, 5, 7, 11]
+    }
+  },
   "data": {
     "all": {
       "batch_size": 16,
@@ -46,9 +52,19 @@
     }
   },
   "optimizerG": {
-    "type": "Adam",
+    "type": "AdamW",
     "args": {
-      "lr": 3e-4
+      "lr": 2e-4,
+      "betas": [0.8, 0.99],
+      "weight_decay": 0.01
+    }
+  },
+  "optimizerD": {
+    "type": "AdamW",
+    "args": {
+      "lr": 2e-4,
+      "betas": [0.8, 0.99],
+      "weight_decay": 0.01
     }
   },
   "lr_schedulerG": {
@@ -59,13 +75,23 @@
       "gamma": 0.999
     }
   },
+  "lr_schedulerD": {
+    "use": "True",
+    "type": "ExponentialLR",
+    "frequency": "epoch",
+    "args": {
+      "gamma": 0.999
+    }
+  },
   "loss": {
     "type": "HiFiLoss",
     "args": {
+      "lam_fm": 2,
+      "lam_mel": 45
     }
   },
   "trainer": {
-    "epochs": 6200,
+    "epochs": 3100,
     "save_dir": "saved/",
     "save_period": 100,
     "verbosity": 2,
