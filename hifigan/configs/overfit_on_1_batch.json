@@ -46,11 +46,9 @@
     }
   },
   "optimizerG": {
-    "type": "AdamW",
+    "type": "Adam",
     "args": {
-      "lr": 2e-4,
-      "betas": [0.8, 0.99],
-      "weight_decay": 0.01
+      "lr": 3e-4
     }
   },
   "lr_schedulerG": {
