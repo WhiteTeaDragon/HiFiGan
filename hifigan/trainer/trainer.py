@@ -1,8 +1,12 @@
 import random
+
+import PIL
 import torch
 from torch.nn.utils import clip_grad_norm_
+from torchvision.transforms import ToTensor
 
 from hifigan.base import BaseTrainer
+from hifigan.logger.utils import plot_spectrogram_to_buf
 from hifigan.utils import inf_loop, MetricTracker, ROOT_PATH
 
 from tqdm import tqdm
@@ -152,8 +156,10 @@ class Trainer(BaseTrainer):
                         "discriminator learning rate", get_lr(
                             self.optimizerD)
                     )
+                self._log_spectrogram(batch["melspec"],
+                                      batch["output_melspec"])
                 self._log_scalars(self.train_metrics)
-                self._log_images(**batch)
+                self._log_audio(batch["audio"], batch["output"], "train")
             if batch_idx >= self.len_epoch:
                 break
 
@@ -285,7 +291,8 @@ class Trainer(BaseTrainer):
                 )
             self.writer.set_step(epoch * self.len_epoch, "valid")
             self._log_scalars(self.valid_metrics)
-            self._log_images(**batch)
+            self._log_spectrogram(batch["melspec"], batch["output_melspec"])
+            self._log_audio(batch["audio"], batch["output"], part="val")
         return self.valid_metrics.result()
 
     def _progress(self, batch_idx):
@@ -321,12 +328,22 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar(f"{metric_name}",
                                        metric_tracker.avg(metric_name))
 
-    def _log_images(self, input_image, output, untouched_target, *args,
-                    **kwargs):
-        if self.writer is None:
-            return
-        index = random.randint(0, len(input_image) - 1)
-        self.writer.add_image("input_image", input_image[index],
-                              normalize=True)
-        self.writer.add_image("output_image", output[index])
-        self.writer.add_image("target_image", untouched_target[index])
+    def _log_spectrogram(self, target_spectrograms, spectrogram_batch):
+        log_index = torch.randint(low=0, high=len(target_spectrograms),
+                                  size=(1,)).item()
+        target_spec = target_spectrograms[log_index]
+        image = PIL.Image.open(
+            plot_spectrogram_to_buf(target_spec.detach().cpu()))
+        self.writer.add_image("target spec", ToTensor()(image))
+        output_spec = spectrogram_batch[log_index]
+        image = PIL.Image.open(
+            plot_spectrogram_to_buf(output_spec.detach().cpu()))
+        self.writer.add_image("output spec", ToTensor()(image))
+
+    def _log_audio(self, input_batch, output_batch, part):
+        index = random.choice(range(len(input_batch)))
+        audio = input_batch[index]
+        output_audio = output_batch[index]
+        sample_rate = self.config["preprocessing"]["sr"]
+        self.writer.add_audio("audio target" + part, audio, sample_rate)
+        self.writer.add_audio("audio output" + part, output_audio, sample_rate)
