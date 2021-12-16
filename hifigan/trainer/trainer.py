@@ -83,10 +83,9 @@ class Trainer(BaseTrainer):
 
     def get_spectrogram(self, audio_tensor_wave: torch.Tensor):
         sr = self.config["preprocessing"]["sr"]
-        with torch.no_grad():
-            mel = self.wave2spec(audio_tensor_wave) \
-                .clamp_(min=1e-5) \
-                .log_()
+        mel = self.wave2spec(audio_tensor_wave) \
+            .clamp_(min=1e-5) \
+            .log_()
         return mel, sr
 
     @staticmethod
