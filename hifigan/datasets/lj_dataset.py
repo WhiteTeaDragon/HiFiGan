@@ -3,7 +3,6 @@ import random
 
 import torchaudio
 import torch
-import librosa
 
 from hifigan.datasets.utils import initialize_mel_spec
 from hifigan.utils import ROOT_PATH
@@ -37,23 +36,6 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
         melspec_length = torch.tensor([melspec.shape[-1]]).int()
 
         return waveform, waveform_length, melspec, melspec_length
-
-    def initialize_mel_spec(self):
-        sr = self.config_parser["preprocessing"]["sr"]
-        args = self.config_parser["preprocessing"]["spectrogram"]["args"]
-        mel_basis = librosa.filters.mel(
-            sr=sr,
-            n_fft=args["n_fft"],
-            n_mels=args["n_mels"],
-            fmin=args["f_min"],
-            fmax=args["f_max"]
-        ).T
-        wave2spec = self.config_parser.init_obj(
-            self.config_parser["preprocessing"]["spectrogram"],
-            torchaudio.transforms,
-        )
-        wave2spec.mel_scale.fb.copy_(torch.tensor(mel_basis))
-        return wave2spec
 
     def get_spectrogram(self, audio_tensor_wave: torch.Tensor):
         sr = self.config_parser["preprocessing"]["sr"]

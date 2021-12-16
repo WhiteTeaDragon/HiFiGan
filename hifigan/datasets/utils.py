@@ -62,6 +62,7 @@ def initialize_mel_spec(config, device=None):
     wave2spec = config.init_obj(
         config["preprocessing"]["spectrogram"],
         torchaudio.transforms,
+        center=False
     )
     if device is not None:
         wave2spec = wave2spec.to(device)
