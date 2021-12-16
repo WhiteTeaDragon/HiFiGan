@@ -31,7 +31,7 @@ class ResBlock(nn.Module):
 class MRF(nn.Module):
     def __init__(self, k_r, d_r, channels):
         super(MRF, self).__init__()
-        num_of_resblocks = k_r
+        num_of_resblocks = len(k_r)
         self.blocks = []
         for i in range(num_of_resblocks):
             self.blocks.append(ResBlock(d_r[i], k_r[i], channels))
