@@ -203,7 +203,7 @@ class Trainer(BaseTrainer):
     def train_on_batch(self, batch, metrics: MetricTracker):
         batch = self.move_batch_to_device(batch, self.device)
         batch["device"] = self.device
-        batch["melspec"] = self.get_spectrogram(batch["audio"])
+        batch["melspec"], _ = self.get_spectrogram(batch["audio"])
         if self.discriminator is not None:
             self.discriminator.train()
         self.generator.train()
