@@ -1,4 +1,5 @@
 from torch import nn
+from torch.nn.utils import weight_norm, remove_weight_norm
 
 from hifigan.base import BaseModel
 
@@ -11,9 +12,10 @@ class ResBlock(nn.Module):
         for i in range(len(d_r)):
             for j in range(len(d_r[i])):
                 self.net.append(nn.LeakyReLU(0.1))
-                self.net.append(nn.Conv1d(channels, channels,
-                                          kernel_size=(k_r,),
-                                          dilation=d_r[i][j], padding="same"))
+                self.net.append(weight_norm(nn.Conv1d(channels, channels,
+                                                      kernel_size=(k_r,),
+                                                      dilation=d_r[i][j],
+                                                      padding="same")))
         self.len_block = len(self.net) // self.num_blocks
         self.net = nn.ModuleList(self.net)
 
@@ -26,6 +28,11 @@ class ResBlock(nn.Module):
                 k += 1
             input_tensor = input_tensor + x
         return input_tensor
+
+    def remove_weight_norm(self):
+        for l in self.net:
+            if isinstance(l, nn.Conv1d):
+                remove_weight_norm(l)
 
 
 class MRF(nn.Module):
@@ -47,25 +54,35 @@ class MRF(nn.Module):
                 output = output + x
         return output
 
+    def remove_weight_norm(self):
+        for l in self.blocks:
+            remove_weight_norm(l)
+
 
 class Block(nn.Module):
     def __init__(self, in_channels, out_channels, kernel, stride, k_r, d_r):
         super(Block, self).__init__()
         self.activation = nn.LeakyReLU(0.1)
-        self.conv = nn.ConvTranspose1d(in_channels, out_channels, (kernel,),
-                                       stride=stride,
-                                       padding=(kernel - stride) // 2)
+        self.conv = weight_norm(nn.ConvTranspose1d(in_channels, out_channels,
+                                                   (kernel,), stride=stride,
+                                                   padding=(kernel - stride) //
+                                                           2))
         self.mrf = MRF(k_r, d_r, out_channels)
 
     def forward(self, input_tensor):
         return self.mrf(self.conv(self.activation(input_tensor)))
+
+    def remove_weight_norm(self):
+        remove_weight_norm(self.conv)
+        remove_weight_norm(self.mrf)
 
 
 class Generator(BaseModel):
     def __init__(self, hidden_ch, k_u, k_r, d_r, d_r_repeat):
         super(Generator, self).__init__()
         d_r = [d_r] * d_r_repeat
-        self.conv1 = nn.Conv1d(80, hidden_ch, (7, 1), padding="same")
+        self.conv1 = weight_norm(nn.Conv1d(80, hidden_ch, (7, 1),
+                                           padding="same"))
         self.layers = []
         in_channels = hidden_ch
         out_channels = in_channels
@@ -76,10 +93,17 @@ class Generator(BaseModel):
             in_channels = out_channels
         self.layers = nn.Sequential(*self.layers)
         self.activation1 = nn.LeakyReLU(0.1)
-        self.conv2 = nn.Conv1d(out_channels, 1, (7,), padding="same")
+        self.conv2 = weight_norm(nn.Conv1d(out_channels, 1, (7,),
+                                           padding="same"))
         self.activation2 = nn.Tanh()
 
     def forward(self, melspec, *args, **kwargs):
         x = self.layers(self.conv1(melspec))
         x = self.activation2(self.conv2(self.activation1(x)))
         return {"output": x}
+
+    def remove_weight_norm(self):
+        remove_weight_norm(self.conv1)
+        remove_weight_norm(self.conv2)
+        for l in self.layers:
+            remove_weight_norm(l)

@@ -250,7 +250,7 @@ class Trainer(BaseTrainer):
     def valid_on_batch(self, batch, metrics):
         batch = self.move_batch_to_device(batch, self.device)
         batch["device"] = self.device
-        self.generator.train()
+        self.generator.eval()
         if self.discriminator is not None:
             self.discriminator.eval()
         with torch.no_grad():
