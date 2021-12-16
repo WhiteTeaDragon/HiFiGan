@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 from torch.nn.utils import weight_norm, spectral_norm
 
@@ -35,7 +34,7 @@ class SubDiscriminator(nn.Module):
         for i in range(len(self.layers)):
             x = self.layers[i](x)
             features.append(x)
-        return torch.flatten(x, 1, -1), features
+        return x, features
 
 
 class PeriodSubDiscriminator(SubDiscriminator):

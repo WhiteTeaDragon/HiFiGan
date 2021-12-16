@@ -94,8 +94,7 @@ class Trainer(BaseTrainer):
         """
         Move all necessary tensors to the HPU
         """
-        for tensor_for_gpu in ["audio", "audio_length", "melspec",
-                               "melspec_length"]:
+        for tensor_for_gpu in ["audio", "audio_length"]:
             if tensor_for_gpu in batch:
                 batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
         return batch
@@ -204,6 +203,7 @@ class Trainer(BaseTrainer):
     def train_on_batch(self, batch, metrics: MetricTracker):
         batch = self.move_batch_to_device(batch, self.device)
         batch["device"] = self.device
+        batch["melspec"] = self.get_spectrogram(batch["audio"])
         if self.discriminator is not None:
             self.discriminator.train()
         self.generator.train()

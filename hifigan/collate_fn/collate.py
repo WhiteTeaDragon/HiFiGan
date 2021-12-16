@@ -19,10 +19,4 @@ def collate_fn(instances: List[Tuple]) -> Dict:
     ]).transpose(0, 1)
     waveform_length = torch.cat(waveform_length)
 
-    melspec = pad_sequence([
-        melspec_[0].transpose(0, 1) for melspec_ in melspec
-    ]).permute(1, 2, 0)
-    melspec_length = torch.cat(melspec_length)
-
-    return {"audio": waveform, "audio_length": waveform_length,
-            "melspec": melspec, "melspec_length": melspec_length}
+    return {"audio": waveform, "audio_length": waveform_length}
