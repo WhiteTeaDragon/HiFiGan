@@ -12,7 +12,7 @@ class ResBlock(nn.Module):
             for j in range(len(d_r[i])):
                 self.net.append(nn.LeakyReLU(0.1))
                 self.net.append(nn.Conv1d(channels, channels,
-                                          kernel_size=(k_r, 1),
+                                          kernel_size=(k_r,),
                                           dilation=d_r[i][j], padding="same"))
         self.len_block = len(self.net) // self.num_blocks
         self.net = nn.ModuleList(self.net)
@@ -52,7 +52,7 @@ class Block(nn.Module):
     def __init__(self, in_channels, out_channels, kernel, stride, k_r, d_r):
         super(Block, self).__init__()
         self.activation = nn.LeakyReLU(0.1)
-        self.conv = nn.ConvTranspose1d(in_channels, out_channels, (kernel, 1),
+        self.conv = nn.ConvTranspose1d(in_channels, out_channels, (kernel,),
                                        stride=stride,
                                        padding=(kernel - stride) // 2)
         self.mrf = MRF(k_r, d_r, out_channels)
@@ -76,7 +76,7 @@ class Generator(BaseModel):
             in_channels = out_channels
         self.layers = nn.Sequential(*self.layers)
         self.activation1 = nn.LeakyReLU(0.1)
-        self.conv2 = nn.Conv1d(out_channels, 1, (7, 1))
+        self.conv2 = nn.Conv1d(out_channels, 1, (7,), padding="same")
         self.activation2 = nn.Tanh()
 
     def forward(self, melspec, *args, **kwargs):
