@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 from torch.nn.utils import weight_norm, spectral_norm
 
@@ -22,8 +21,7 @@ class DiscriminatorFromSubs(nn.Module):
             x, f = self.discriminators[i](model_output)
             model_res.append(x)
             model_features.append(f)
-        return target_res, model_res, torch.stack(target_features), \
-            torch.stack(model_features)
+        return target_res, model_res, target_features, model_features
 
 
 class SubDiscriminator(nn.Module):
@@ -36,7 +34,7 @@ class SubDiscriminator(nn.Module):
         for i in range(len(self.layers)):
             x = self.layers[i](x)
             features.append(x)
-        return x, torch.stack(features)
+        return x, features
 
 
 class PeriodSubDiscriminator(SubDiscriminator):

@@ -23,11 +23,8 @@ class HiFiLoss(torch.nn.Module):
         return self.real_loss(target_res) + self.fake_loss(model_res)
 
     def features_loss(self, target_features, model_features):
-        shape = target_features.shape
-        target_features = target_features.reshape(shape[0], shape[1],
-                                                  *shape[2:])
-        shape = model_features.shape
-        model_features = model_features.reshape(shape[0], shape[1],
-                                                *shape[2:])
-        return torch.sum(torch.mean(
-            torch.abs(target_features - model_features), dim=0))
+        loss = 0
+        for disc1, disc2 in zip(target_features, model_features):
+            for layer1, layer2 in zip(disc1, disc2):
+                loss += torch.mean(torch.abs(layer1 - layer2))
+        return loss
