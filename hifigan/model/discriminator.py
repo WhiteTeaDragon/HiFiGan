@@ -36,7 +36,7 @@ class SubDiscriminator(nn.Module):
         for i in range(len(self.layers)):
             x = self.layers[i](x)
             features.append(x)
-        return x, features
+        return x, torch.stack(features)
 
 
 class PeriodSubDiscriminator(SubDiscriminator):
