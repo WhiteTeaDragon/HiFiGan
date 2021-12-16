@@ -36,7 +36,8 @@
         {
           "type": "LJSpeechDataset",
           "args": {
-            "download": "True"
+            "download": "True",
+            "segment_size": 8192
           }
         }
       ]
