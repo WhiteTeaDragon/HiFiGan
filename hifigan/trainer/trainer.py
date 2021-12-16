@@ -80,8 +80,10 @@ class Trainer(BaseTrainer):
         """
         Move all necessary tensors to the HPU
         """
-        for tensor_for_gpu in ["input_image", "target"]:
-            batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
+        for tensor_for_gpu in ["audio", "audio_length", "melspec",
+                               "melspec_length"]:
+            if tensor_for_gpu in batch:
+                batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
         return batch
 
     def _clip_grad_norm(self):
