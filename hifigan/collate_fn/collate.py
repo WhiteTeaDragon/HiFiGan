@@ -12,7 +12,7 @@ def collate_fn(instances: List[Tuple]) -> Dict:
     Collate and pad fields in dataset items
     """
     input_data = list(zip(*instances))
-    waveform, waveform_length, melspec, melspec_length = input_data
+    waveform, waveform_length = input_data
 
     waveform = pad_sequence([
         waveform_[0] for waveform_ in waveform
