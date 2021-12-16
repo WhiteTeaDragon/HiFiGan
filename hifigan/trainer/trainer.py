@@ -276,7 +276,9 @@ class Trainer(BaseTrainer):
             output_melspec, _ = self.get_spectrogram(outputs["output"])
             batch.update(outputs)
             batch["output_melspec"] = output_melspec
+            loss_dict = self.criterion(**batch)
             if metrics is not None:
+                metrics.update("loss", loss_dict["loss"].item())
                 for met in self.metrics:
                     metrics.update(met.name, met(**batch))
         return batch
