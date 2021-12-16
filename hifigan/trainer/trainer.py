@@ -1,6 +1,5 @@
 import random
 import torch
-import torchvision
 from torch.nn.utils import clip_grad_norm_
 
 from hifigan.base import BaseTrainer
@@ -31,7 +30,6 @@ class Trainer(BaseTrainer):
             device,
             data_loader,
             log_step,
-            fid_log_step,
             valid_data_loader=None,
             lr_schedulerG=None,
             lr_schedulerD=None,
@@ -46,7 +44,6 @@ class Trainer(BaseTrainer):
         self.config = config
         self.data_loader = data_loader
         self.log_step = log_step
-        self.fid_log_step = fid_log_step
         if len_epoch is None:
             # epoch-based training
             self.len_epoch = len(self.data_loader)

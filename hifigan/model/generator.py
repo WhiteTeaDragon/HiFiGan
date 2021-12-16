@@ -13,7 +13,7 @@ class ResBlock(nn.Module):
                 self.net.append(nn.LeakyReLU(0.1))
                 self.net.append(nn.Conv1d(channels, channels,
                                           kernel_size=(k_r, 1),
-                                          dilation=d_r[i][j]))
+                                          dilation=d_r[i][j], padding="same"))
         self.len_block = len(self.net) // self.num_blocks
         self.net = nn.ModuleList(self.net)
 
