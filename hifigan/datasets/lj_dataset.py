@@ -20,7 +20,6 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
 
     def __getitem__(self, index: int):
         waveform, _, _, _ = super().__getitem__(index)
-        waveform = waveform.to(self.device)
         waveform_length = torch.tensor([waveform.shape[-1]]).int()
 
         melspec, _ = self.get_spectrogram(waveform)
