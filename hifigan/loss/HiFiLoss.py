@@ -21,7 +21,7 @@ class HiFiLoss(torch.nn.Module):
 
     def disc_forward(self, target_res, model_res):
         loss = 0
-        for layer1, layer2 in target_res, model_res:
+        for layer1, layer2 in zip(target_res, model_res):
             loss += torch.mean((1 - layer1) ** 2) + torch.mean(layer2 ** 2)
         return loss
 
