@@ -346,7 +346,7 @@ class Trainer(BaseTrainer):
         image = PIL.Image.open(
             plot_spectrogram_to_buf(target_spec.detach().cpu()))
         self.writer.add_image("target spec", ToTensor()(image))
-        output_spec = spectrogram_batch[log_index]
+        output_spec = spectrogram_batch[log_index].squeeze(0)
         image = PIL.Image.open(
             plot_spectrogram_to_buf(output_spec.detach().cpu()))
         self.writer.add_image("output spec", ToTensor()(image))
