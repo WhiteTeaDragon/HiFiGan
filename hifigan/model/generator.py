@@ -52,7 +52,7 @@ class Block(nn.Module):
     def __init__(self, in_channels, out_channels, kernel, stride, k_r, d_r):
         super(Block, self).__init__()
         self.activation = nn.LeakyReLU(0.1)
-        self.conv = nn.ConvTranspose2d(in_channels, out_channels, (kernel, 1),
+        self.conv = nn.ConvTranspose1d(in_channels, out_channels, (kernel, 1),
                                        stride=stride)
         self.mrf = MRF(k_r, d_r, out_channels)
 
@@ -75,7 +75,7 @@ class Generator(BaseModel):
             in_channels = out_channels
         self.layers = nn.Sequential(*self.layers)
         self.activation1 = nn.LeakyReLU(0.1)
-        self.conv2 = nn.Conv2d(out_channels, 1, (7, 1))
+        self.conv2 = nn.Conv1d(out_channels, 1, (7, 1))
         self.activation2 = nn.Tanh()
 
     def forward(self, melspec, *args, **kwargs):
