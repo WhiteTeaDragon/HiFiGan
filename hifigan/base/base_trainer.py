@@ -3,10 +3,7 @@ from abc import abstractmethod
 import torch
 from numpy import inf
 
-from pix2pix.using_other_libs_constant import USING_OTHER_LIBS
-
-if USING_OTHER_LIBS:
-    from pix2pix.logger import WanDBWriter
+from hifigan.logger import WanDBWriter
 
 
 class BaseTrainer:
@@ -54,10 +51,7 @@ class BaseTrainer:
         self.checkpoint_dir = config.save_dir
 
         # setup visualization writer instance
-        if USING_OTHER_LIBS:
-            self.writer = WanDBWriter(config)
-        else:
-            self.writer = None
+        self.writer = WanDBWriter(config)
 
         if config.resume is not None:
             self._resume_checkpoint(config.resume)
@@ -221,9 +215,9 @@ class BaseTrainer:
                 (checkpoint["config"].get("lr_schedulerG", None) is not None
                  and
                  (checkpoint["config"]["lr_schedulerG"]["type"] != self.config[
-                "lr_schedulerG"]["type"] or
-                checkpoint["config"]["lr_schedulerG"]["args"] != self.config[
-                "lr_schedulerG"]["args"])) or
+                     "lr_schedulerG"]["type"] or
+                  checkpoint["config"]["lr_schedulerG"]["args"] != self.config[
+                      "lr_schedulerG"]["args"])) or
                 "not_resume" in self.config["optimizerG"]
         ):
             self.logger.warning(
@@ -258,11 +252,11 @@ class BaseTrainer:
                     (checkpoint["config"].get("lr_schedulerD",
                                               None) is not None and
                      (checkpoint["config"]["lr_schedulerD"]["type"] !=
-                    self.config[
-                        "lr_schedulerD"]["type"] or
-                    checkpoint["config"]["lr_schedulerD"]["args"] !=
-                    self.config[
-                        "lr_schedulerD"]["args"])) or
+                      self.config[
+                          "lr_schedulerD"]["type"] or
+                      checkpoint["config"]["lr_schedulerD"]["args"] !=
+                      self.config[
+                          "lr_schedulerD"]["args"])) or
                     "not_resume" in self.config["optimizerD"]
             ):
                 self.logger.warning(
