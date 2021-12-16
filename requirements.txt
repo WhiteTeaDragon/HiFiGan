@@ -9,3 +9,4 @@ tqdm~=4.62.3
 torchaudio~=0.10.0
 librosa~=0.8.1
 gdown~=4.2.0
+wandb~=0.12.7
