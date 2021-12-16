@@ -22,7 +22,7 @@ def main(config, out_file):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # setup data_loader instances
-    dataloaders = get_dataloaders(config, device)
+    dataloaders = get_dataloaders(config)
 
     # build model architecture
     model = config.init_obj(config["archG"], module_model)

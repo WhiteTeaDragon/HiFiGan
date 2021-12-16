@@ -8,7 +8,7 @@ from hifigan.collate_fn.collate import collate_fn
 from hifigan.utils.parse_config import ConfigParser
 
 
-def get_dataloaders(configs: ConfigParser, device):
+def get_dataloaders(configs: ConfigParser):
     dataloaders = {}
     config_params = list(configs["data"].items())
     for i in range(len(config_params)):
@@ -19,7 +19,7 @@ def get_dataloaders(configs: ConfigParser, device):
         params = config_params[i][1]
         num_workers = params.get("num_workers", 1)
         dataset = configs.init_obj(params["datasets"][0], hifigan.datasets,
-                                   configs, device)
+                                   configs)
         if "test_size" in params:
             test_size = int(params["test_size"])
             train_size = len(dataset) - test_size
@@ -49,7 +49,7 @@ def get_dataloaders(configs: ConfigParser, device):
     return dataloaders
 
 
-def initialize_mel_spec(config, device):
+def initialize_mel_spec(config, device=None):
     sr = config["preprocessing"]["sr"]
     args = config["preprocessing"]["spectrogram"]["args"]
     mel_basis = librosa.filters.mel(
@@ -62,6 +62,8 @@ def initialize_mel_spec(config, device):
     wave2spec = config.init_obj(
         config["preprocessing"]["spectrogram"],
         torchaudio.transforms,
-    ).to(device)
+    )
+    if device is not None:
+        wave2spec = wave2spec.to(device)
     wave2spec.mel_scale.fb.copy_(torch.tensor(mel_basis))
     return wave2spec
