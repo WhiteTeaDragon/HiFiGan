@@ -28,7 +28,7 @@ class HiFiLoss(torch.nn.Module):
     def disc_forward(self, target_res, model_res):
         return self.real_loss(target_res) + self.fake_loss(model_res)
 
-    def features_loss(self, target_features, model_features):
+    def feature_loss(self, target_features, model_features):
         loss = 0
         for disc1, disc2 in zip(target_features, model_features):
             for layer1, layer2 in zip(disc1, disc2):
