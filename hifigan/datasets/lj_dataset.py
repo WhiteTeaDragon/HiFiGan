@@ -43,7 +43,7 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
         wave2spec.mel_scale.fb.copy_(torch.tensor(mel_basis))
         return wave2spec
 
-    def get_spectogram(self, audio_tensor_wave: torch.Tensor):
+    def get_spectrogram(self, audio_tensor_wave: torch.Tensor):
         sr = self.config_parser["preprocessing"]["sr"]
         with torch.no_grad():
             mel = self.wave2spec(audio_tensor_wave) \
