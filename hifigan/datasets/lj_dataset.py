@@ -3,6 +3,7 @@ import torchaudio
 import torch
 import librosa
 
+from hifigan.datasets.utils import initialize_mel_spec
 from hifigan.utils import ROOT_PATH
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
             data_dir.mkdir(exist_ok=True, parents=True)
         super().__init__(root=data_dir, download=(download == "True"))
         self.config_parser = config_parser
-        self.wave2spec = self.initialize_mel_spec()
+        self.wave2spec = initialize_mel_spec(self.config_parser)
 
     def __getitem__(self, index: int):
         waveform, _, _, _ = super().__getitem__(index)

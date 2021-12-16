@@ -1,4 +1,6 @@
+import librosa
 import torch
+import torchaudio
 from torch.utils.data import DataLoader
 
 import hifigan
@@ -45,3 +47,21 @@ def get_dataloaders(configs: ConfigParser, device):
                 shuffle=shuffle, num_workers=num_workers)
             dataloaders["val"] = test_dataloader
     return dataloaders
+
+
+def initialize_mel_spec(config):
+    sr = config["preprocessing"]["sr"]
+    args = config["preprocessing"]["spectrogram"]["args"]
+    mel_basis = librosa.filters.mel(
+        sr=sr,
+        n_fft=args["n_fft"],
+        n_mels=args["n_mels"],
+        fmin=args["f_min"],
+        fmax=args["f_max"]
+    ).T
+    wave2spec = config.init_obj(
+        config["preprocessing"]["spectrogram"],
+        torchaudio.transforms,
+    )
+    wave2spec.mel_scale.fb.copy_(torch.tensor(mel_basis))
+    return wave2spec

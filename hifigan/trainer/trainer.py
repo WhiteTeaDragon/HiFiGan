@@ -6,6 +6,7 @@ from torch.nn.utils import clip_grad_norm_
 from torchvision.transforms import ToTensor
 
 from hifigan.base import BaseTrainer
+from hifigan.datasets.utils import initialize_mel_spec
 from hifigan.logger.utils import plot_spectrogram_to_buf
 from hifigan.utils import inf_loop, MetricTracker, ROOT_PATH
 
@@ -78,6 +79,15 @@ class Trainer(BaseTrainer):
         self.valid_metrics = MetricTracker(
             *[m.name for m in self.metrics]
         )
+        self.wave2spec = initialize_mel_spec(self.config)
+
+    def get_spectrogram(self, audio_tensor_wave: torch.Tensor):
+        sr = self.config["preprocessing"]["sr"]
+        with torch.no_grad():
+            mel = self.wave2spec(audio_tensor_wave) \
+                .clamp_(min=1e-5) \
+                .log_()
+        return mel, sr
 
     @staticmethod
     def move_batch_to_device(batch, device: torch.device):
@@ -199,7 +209,7 @@ class Trainer(BaseTrainer):
         self.generator.train()
 
         output_wav = self.generator(**batch)["output"]
-        output_melspec = self.data_loader.dataset.get_spectrogram(output_wav)
+        output_melspec = self.get_spectrogram(output_wav)
 
         if self.discriminator is not None:
             ### Update discriminator
@@ -264,8 +274,7 @@ class Trainer(BaseTrainer):
             self.discriminator.eval()
         with torch.no_grad():
             outputs = self.generator(**batch)
-            output_melspec = self.valid_data_loader.dataset.dataset\
-                .get_spectrogram(outputs["output"])
+            output_melspec = self.get_spectrogram(outputs["output"])
             batch.update(outputs)
             batch["output_melspec"] = output_melspec
             if metrics is not None:
