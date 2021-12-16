@@ -264,7 +264,7 @@ class Trainer(BaseTrainer):
             self.discriminator.eval()
         with torch.no_grad():
             outputs = self.generator(**batch)
-            output_melspec = self.data_loader.dataset.get_spectrogram(
+            output_melspec = self.valid_data_loader.dataset.get_spectrogram(
                 outputs["output"])
             batch.update(outputs)
             batch["output_melspec"] = output_melspec
