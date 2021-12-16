@@ -237,14 +237,10 @@ class Trainer(BaseTrainer):
         if self.discriminator is not None:
             result = self.discriminator(batch["audio"], output_wav)
             _, model_res, target_features, model_features = result["mpd"]
-            target_features = torch.tensor(target_features, device=self.device)
-            model_features = torch.tensor(model_features, device=self.device)
             mpd_gen_loss = self.criterion.real_loss(model_res)
             mpd_feature_loss = self.criterion.feature_loss(target_features,
                                                            model_features)
             _, model_res, target_features, model_features = result["msd"]
-            target_features = torch.tensor(target_features, device=self.device)
-            model_features = torch.tensor(model_features, device=self.device)
             msd_gen_loss = self.criterion.real_loss(model_res)
             msd_feature_loss = self.criterion.feature_loss(target_features,
                                                            model_features)
