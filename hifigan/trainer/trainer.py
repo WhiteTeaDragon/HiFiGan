@@ -77,6 +77,7 @@ class Trainer(BaseTrainer):
                 *[m.name for m in self.metrics]
             )
         self.valid_metrics = MetricTracker(
+            "loss",
             *[m.name for m in self.metrics]
         )
         self.wave2spec = initialize_mel_spec(self.config, self.device)
