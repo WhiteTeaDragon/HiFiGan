@@ -65,7 +65,8 @@ class PeriodSubDiscriminator(SubDiscriminator):
         super(PeriodSubDiscriminator, self).__init__(layers)
 
     def forward(self, input_tensor):
-        batch_size, t = input_tensor.shape
+        batch_size, ch, t = input_tensor.shape
+        assert ch == 1
         padding = (self.period - (t % self.period)) % self.period
         x = nn.functional.pad(input_tensor, (0, padding), "reflect")
         x = x.reshape(-1, 1, (t + self.period - 1) // self.period, self.period)
@@ -147,5 +148,5 @@ class Discriminator(BaseModel):
         self.msd = MSD()
 
     def forward(self, target, model_output):
-        return {"mpd": self.mpd(target, model_output),
-                "msd": self.msd(target, model_output)}
+        return {"mpd": self.mpd(target.unsqueeze(1), model_output),
+                "msd": self.msd(target.unsqueeze(1), model_output)}
