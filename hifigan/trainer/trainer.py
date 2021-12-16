@@ -271,6 +271,7 @@ class Trainer(BaseTrainer):
 
     def valid_on_batch(self, batch, metrics):
         batch = self.move_batch_to_device(batch, self.device)
+        batch["melspec"], _ = self.get_spectrogram(batch["audio"])
         batch["device"] = self.device
         self.generator.eval()
         if self.discriminator is not None:
