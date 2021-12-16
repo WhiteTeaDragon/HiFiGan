@@ -70,7 +70,7 @@ class Generator(BaseModel):
         out_channels = in_channels
         for i in range(len(k_u)):
             out_channels = in_channels // 2
-            self.layer.append(Block(in_channels, out_channels, k_u[i],
+            self.layers.append(Block(in_channels, out_channels, k_u[i],
                                     k_u[i] // 2, k_r, d_r))
             in_channels = out_channels
         self.layers = nn.Sequential(*self.layers)
