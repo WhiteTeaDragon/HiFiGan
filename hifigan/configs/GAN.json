@@ -93,7 +93,7 @@
   "trainer": {
     "epochs": 3100,
     "save_dir": "saved/",
-    "save_period": 100,
+    "save_period": 1,
     "verbosity": 2,
     "wandb_project": "hifi",
     "log_step": 200

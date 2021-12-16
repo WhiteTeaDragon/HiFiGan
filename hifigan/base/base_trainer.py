@@ -149,8 +149,7 @@ class BaseTrainer:
             "config": self.config,
         }
         filename = str(
-            self.checkpoint_dir / "checkpoint-generator-epoch{}.pth".format(
-                epoch))
+            self.checkpoint_dir / "checkpoint-generator.pth")
         if not (only_best and save_best):
             torch.save(stateG, filename)
             self.logger.info("Saving checkpoint: {} ...".format(filename))
@@ -169,8 +168,7 @@ class BaseTrainer:
                 "config": self.config,
             }
             filename = str(
-                self.checkpoint_dir / "checkpoint-discriminator-epoch{}.pth"
-                .format(epoch))
+                self.checkpoint_dir / "checkpoint-discriminator.pth")
             if not (only_best and save_best):
                 torch.save(stateD, filename)
                 self.logger.info("Saving checkpoint: {} ...".format(filename))
