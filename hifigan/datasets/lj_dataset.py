@@ -27,8 +27,8 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
         return waveform, waveform_length, melspec, melspec_length
 
     def initialize_mel_spec(self):
-        sr = self.config["preprocessing"]["sr"]
-        args = self.config["preprocessing"]["spectrogram"]["args"]
+        sr = self.config_parser["preprocessing"]["sr"]
+        args = self.config_parser["preprocessing"]["spectrogram"]["args"]
         mel_basis = librosa.filters.mel(
             sr=sr,
             n_fft=args["n_fft"],
@@ -36,15 +36,15 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
             fmin=args["f_min"],
             fmax=args["f_max"]
         ).T
-        wave2spec = self.config.init_obj(
-            self.config["preprocessing"]["spectrogram"],
+        wave2spec = self.config_parser.init_obj(
+            self.config_parser["preprocessing"]["spectrogram"],
             torchaudio.transforms,
         )
         wave2spec.mel_scale.fb.copy_(torch.tensor(mel_basis))
         return wave2spec
 
     def get_spectogram(self, audio_tensor_wave: torch.Tensor):
-        sr = self.config["preprocessing"]["sr"]
+        sr = self.config_parser["preprocessing"]["sr"]
         with torch.no_grad():
             mel = self.wave2spec(audio_tensor_wave) \
                 .clamp_(min=1e-5) \
