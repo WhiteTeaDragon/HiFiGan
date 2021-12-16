@@ -19,7 +19,7 @@ def get_dataloaders(configs: ConfigParser, device):
         params = config_params[i][1]
         num_workers = params.get("num_workers", 1)
         dataset = configs.init_obj(params["datasets"][0], hifigan.datasets,
-                                   configs)
+                                   configs, device)
         if "test_size" in params:
             test_size = int(params["test_size"])
             train_size = len(dataset) - test_size
@@ -49,7 +49,7 @@ def get_dataloaders(configs: ConfigParser, device):
     return dataloaders
 
 
-def initialize_mel_spec(config):
+def initialize_mel_spec(config, device):
     sr = config["preprocessing"]["sr"]
     args = config["preprocessing"]["spectrogram"]["args"]
     mel_basis = librosa.filters.mel(
@@ -62,6 +62,6 @@ def initialize_mel_spec(config):
     wave2spec = config.init_obj(
         config["preprocessing"]["spectrogram"],
         torchaudio.transforms,
-    )
+    ).to(device)
     wave2spec.mel_scale.fb.copy_(torch.tensor(mel_basis))
     return wave2spec

@@ -10,13 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
-    def __init__(self, config_parser, data_dir=None, download="True"):
+    def __init__(self, config_parser, device, data_dir=None, download="True"):
         if data_dir is None:
             data_dir = ROOT_PATH / "data" / "datasets" / "lj"
             data_dir.mkdir(exist_ok=True, parents=True)
         super().__init__(root=data_dir, download=(download == "True"))
         self.config_parser = config_parser
-        self.wave2spec = initialize_mel_spec(self.config_parser)
+        self.wave2spec = initialize_mel_spec(self.config_parser, device)
 
     def __getitem__(self, index: int):
         waveform, _, _, _ = super().__getitem__(index)

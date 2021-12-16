@@ -79,7 +79,7 @@ class Trainer(BaseTrainer):
         self.valid_metrics = MetricTracker(
             *[m.name for m in self.metrics]
         )
-        self.wave2spec = initialize_mel_spec(self.config)
+        self.wave2spec = initialize_mel_spec(self.config, self.device)
 
     def get_spectrogram(self, audio_tensor_wave: torch.Tensor):
         sr = self.config["preprocessing"]["sr"]
