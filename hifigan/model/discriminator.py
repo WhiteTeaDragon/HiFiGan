@@ -68,7 +68,7 @@ class PeriodSubDiscriminator(SubDiscriminator):
         batch_size, t = input_tensor.shape
         padding = (self.period - (t % self.period)) % self.period
         x = nn.functional.pad(input_tensor, (0, padding), "reflect")
-        x = x.reshape(-1, (t + self.period - 1) // self.period, self.period)
+        x = x.reshape(-1, 1, (t + self.period - 1) // self.period, self.period)
         return super(PeriodSubDiscriminator, self).forward(x)
         
 
