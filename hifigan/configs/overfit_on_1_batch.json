@@ -46,15 +46,13 @@
     }
   },
   "optimizerG": {
-    "type": "AdamW",
+    "type": "Adam",
     "args": {
-      "lr": 2e-4,
-      "betas": [0.8, 0.99],
-      "weight_decay": 0.01
+      "lr": 3e-4
     }
   },
   "lr_schedulerG": {
-    "use": "False",
+    "use": "True",
     "type": "ExponentialLR",
     "frequency": "epoch",
     "args": {
@@ -67,7 +65,7 @@
     }
   },
   "trainer": {
-    "epochs": 3100,
+    "epochs": 6200,
     "save_dir": "saved/",
     "save_period": 100,
     "verbosity": 2,
