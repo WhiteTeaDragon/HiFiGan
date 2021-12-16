@@ -121,9 +121,10 @@ class Trainer(BaseTrainer):
                     for p in self.generator.parameters():
                         if p.grad is not None:
                             del p.grad  # free some memory
-                    for p in self.discriminator.parameters():
-                        if p.grad is not None:
-                            del p.grad  # free some memory
+                    if self.discriminator is not None:
+                        for p in self.discriminator.parameters():
+                            if p.grad is not None:
+                                del p.grad  # free some memory
                     torch.cuda.empty_cache()
                     continue
                 else:
