@@ -264,7 +264,10 @@ class Trainer(BaseTrainer):
             self.discriminator.eval()
         with torch.no_grad():
             outputs = self.generator(**batch)
+            output_melspec = self.data_loader.dataset.get_spectrogram(
+                outputs["output"])
             batch.update(outputs)
+            batch["output_melspec"] = output_melspec
             if metrics is not None:
                 for met in self.metrics:
                     metrics.update(met.name, met(**batch))
