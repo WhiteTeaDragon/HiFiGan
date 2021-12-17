@@ -69,7 +69,7 @@ class PeriodSubDiscriminator(SubDiscriminator):
         assert ch == 1
         padding = (self.period - (t % self.period)) % self.period
         x = nn.functional.pad(input_tensor, (0, padding), "reflect")
-        x = x.reshape(-1, 1, (t + self.period - 1) // self.period, self.period)
+        x = x.view(-1, 1, (t + self.period - 1) // self.period, self.period)
         return super(PeriodSubDiscriminator, self).forward(x)
 
 

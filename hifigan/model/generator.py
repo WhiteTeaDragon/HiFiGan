@@ -52,7 +52,7 @@ class MRF(nn.Module):
                 output = x
             else:
                 output = output + x
-        return output
+        return output / len(self.blocks)
 
     def remove_weight_norm(self):
         for l in self.blocks:
