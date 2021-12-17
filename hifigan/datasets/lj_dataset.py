@@ -33,4 +33,4 @@ class LJSpeechDataset(torchaudio.datasets.LJSPEECH):
                     waveform, (0, self.segment_size - waveform_length),
                     'constant')
 
-        return waveform, waveform_length
+        return {"audio": waveform, "audio_length": waveform_length}

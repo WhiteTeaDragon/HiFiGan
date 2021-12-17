@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader
 from copy import copy
 
 import hifigan
-from hifigan.collate_fn.collate import collate_fn
 from hifigan.utils.parse_config import ConfigParser
 
 
@@ -42,13 +41,13 @@ def get_dataloaders(configs: ConfigParser):
         else:
             raise Exception()
         train_dataloader = DataLoader(
-            train_dataset, batch_size=bs, collate_fn=collate_fn,
-            shuffle=shuffle, num_workers=num_workers)
+            train_dataset, batch_size=bs, shuffle=shuffle,
+            num_workers=num_workers)
         dataloaders[split] = train_dataloader
         if "test_size" in params:
             test_dataloader = DataLoader(
-                test_dataset, batch_size=bs, collate_fn=collate_fn,
-                shuffle=shuffle, num_workers=num_workers)
+                test_dataset, batch_size=bs, shuffle=shuffle,
+                num_workers=num_workers)
             dataloaders["val"] = test_dataloader
     return dataloaders
 
