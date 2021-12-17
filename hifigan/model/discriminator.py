@@ -148,5 +148,5 @@ class Discriminator(BaseModel):
         self.msd = MSD()
 
     def forward(self, target, model_output):
-        return {"mpd": self.mpd(target.unsqueeze(1), model_output),
-                "msd": self.msd(target.unsqueeze(1), model_output)}
+        return {"mpd": self.mpd(target, model_output),
+                "msd": self.msd(target, model_output)}
