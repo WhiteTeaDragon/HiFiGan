@@ -9,7 +9,7 @@ import torchaudio
 from tqdm import tqdm
 
 import hifigan.model as module_model
-from hifigan.datasets.utils import get_dataloaders
+from hifigan.datasets.utils import get_dataloaders, initialize_mel_spec
 from hifigan.trainer import Trainer
 from hifigan.utils import ROOT_PATH
 from hifigan.utils.parse_config import ConfigParser
@@ -34,6 +34,7 @@ def main(config, out_file):
     if config["n_gpu"] > 1:
         model = torch.nn.DataParallel(model)
     model.load_state_dict(state_dict)
+    wave2spec = initialize_mel_spec(config, device)
 
     # prepare model for testing
     model = model.to(device)
@@ -43,7 +44,9 @@ def main(config, out_file):
     with torch.no_grad():
         for batch_num, batch in enumerate(tqdm(dataloaders["test"])):
             batch = Trainer.move_batch_to_device(batch, device)
-            batch["melspec"], _ = Trainer.get_spectrogram(batch["audio"])
+            batch["melspec"] = wave2spec(batch["audio"].squeeze(1)) \
+                .clamp_(min=1e-5) \
+                .log_()
             batch["device"] = device
             output = model(**batch)
             audios.append(output)
@@ -88,14 +91,14 @@ if __name__ == "__main__":
     args.add_argument(
         "-b",
         "--batch-size",
-        default=20,
+        default=None,
         type=int,
         help="Test dataset batch size",
     )
     args.add_argument(
         "-j",
         "--jobs",
-        default=1,
+        default=None,
         type=int,
         help="Number of workers for test dataloader",
     )
@@ -129,7 +132,9 @@ if __name__ == "__main__":
             config.config.update(json.load(f))
 
     assert config.config.get("data", {}).get("test", None) is not None
-    config["data"]["test"]["batch_size"] = args.batch_size
-    config["data"]["test"]["num_workers"] = args.jobs
+    if args.batch_size is not None:
+        config["data"]["test"]["batch_size"] = args.batch_size
+    if args.jobs is not None:
+        config["data"]["test"]["num_workers"] = args.jobs
 
     main(config, args.output)
