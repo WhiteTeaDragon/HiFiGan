@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
     if args.resume is None:
         url = "https://drive.google.com/uc?id" \
-              "=1r79iZvKknAtpnRuv1F_QjhcTlXfRAFU9 "
+              "=1r79iZvKknAtpnRuv1F_QjhcTlXfRAFU9"
         path_to_checkpoint = str(DEFAULT_CHECKPOINT_PATH.absolute().resolve())
         checkpoint_dir = ROOT_PATH / "default_test_model"
         checkpoint_dir.mkdir(exist_ok=True, parents=True)
