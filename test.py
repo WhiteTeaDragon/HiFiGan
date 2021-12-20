@@ -6,6 +6,7 @@ from pathlib import Path
 import gdown as gdown
 import torch
 import torchaudio
+from torch.nn.utils import remove_weight_norm
 from tqdm import tqdm
 
 import hifigan.model as module_model
@@ -39,6 +40,11 @@ def main(config, out_file):
     # prepare model for testing
     model = model.to(device)
     model.eval()
+    remove_weight_norm(model.conv1)
+    remove_weight_norm(model.conv2)
+    for layer in model.layers:
+        remove_weight_norm(layer.conv)
+        remove_weight_norm(layer.mrf)
 
     audios = []
     with torch.no_grad():
