@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class TestDataset(Dataset):
-    def __init__(self, config_parser, segment_size, data_dir=None,
-                 download="True"):
+    def __init__(self, config_parser, data_dir=None):
         super().__init__()
         self.config_parser = config_parser
         if data_dir is None:
