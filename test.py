@@ -38,11 +38,13 @@ def main(config, out_file):
     # prepare model for testing
     model = model.to(device)
     model.eval()
+    model.remove_weight_norm()
 
     audios = []
     with torch.no_grad():
         for batch_num, batch in enumerate(tqdm(dataloaders["test"])):
             batch = Trainer.move_batch_to_device(batch, device)
+            batch["melspec"], _ = Trainer.get_spectrogram(batch["audio"])
             batch["device"] = device
             output = model(**batch)
             audios.append(output)
@@ -106,8 +108,8 @@ if __name__ == "__main__":
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
     if args.resume is None:
-        url = "https://drive.google.com/" \
-              "uc?id=1cyUYmx55_w4UEhL-GzZC5UlevMl4mjUB"
+        url = "https://drive.google.com/uc?id" \
+              "=1r79iZvKknAtpnRuv1F_QjhcTlXfRAFU9 "
         path_to_checkpoint = str(DEFAULT_CHECKPOINT_PATH.absolute().resolve())
         checkpoint_dir = ROOT_PATH / "default_test_model"
         checkpoint_dir.mkdir(exist_ok=True, parents=True)
