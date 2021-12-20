@@ -38,7 +38,7 @@
     "all": {
       "batch_size": 16,
       "num_workers": 5,
-      "test_size": 4,
+      "test_size": 1,
       "datasets": [
         {
           "type": "LJSpeechDataset",
