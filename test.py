@@ -49,7 +49,7 @@ def main(config, out_file):
                 .log_()
             batch["device"] = device
             output = model(**batch)
-            audios.append(output)
+            audios.append(output["output"])
     out_file = Path(out_file)
     out_file.mkdir(exist_ok=True, parents=True)
     for i in range(len(audios)):
