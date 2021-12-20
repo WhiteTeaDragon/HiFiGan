@@ -38,7 +38,6 @@ def main(config, out_file):
     # prepare model for testing
     model = model.to(device)
     model.eval()
-    model.remove_weight_norm()
 
     audios = []
     with torch.no_grad():
