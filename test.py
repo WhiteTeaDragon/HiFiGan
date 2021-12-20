@@ -6,6 +6,7 @@ from pathlib import Path
 import gdown as gdown
 import torch
 import torchaudio
+from torch import nn
 from torch.nn.utils import remove_weight_norm
 from tqdm import tqdm
 
@@ -44,7 +45,10 @@ def main(config, out_file):
     remove_weight_norm(model.conv2)
     for layer in model.layers:
         remove_weight_norm(layer.conv)
-        remove_weight_norm(layer.mrf)
+        for mrf_block in layer.mrf.blocks:
+            for conv_layer in mrf_block.net:
+                if isinstance(conv_layer, nn.Conv1d):
+                    remove_weight_norm(conv_layer)
 
     audios = []
     with torch.no_grad():
